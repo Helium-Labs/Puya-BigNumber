@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "puya-bignumber"
+version = "0.1.0"
+description = "Math Library for big numbers in Puya for Algorand"
+authors = ["Winton Nathan-Roberts"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+py-algorand-sdk = "^2.6.1"
+algorand-python = "^2.0.1"
+algorand-python-testing = "^0.4.1"
+pytest = "^8.3.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
