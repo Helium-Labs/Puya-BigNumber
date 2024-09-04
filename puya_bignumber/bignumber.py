@@ -74,7 +74,6 @@ def subtract_bytes(a_in: Bytes, b_in: Bytes) -> Bytes:
     ones_complement: Bytes = ~b
     twos_complement: Bytes = add_bytes(ones_complement, itob(1))
     a_inv_b: Bytes = add_bytes(a, twos_complement)
-    print(a_inv_b[1:])
     return a_inv_b[1:]
 
 
@@ -84,7 +83,6 @@ def big_endian_equal(a: Bytes, b: Bytes) -> bool:
     padded_a = pad(a, length)
     padded_b = pad(b, length)
     are_equal: bool = padded_a == padded_b
-    print(padded_a, "\n", padded_b)
     return are_equal
 
 
