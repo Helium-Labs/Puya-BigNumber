@@ -14,6 +14,14 @@ A library for mathematical operations involving big numbers in Puya for Algorand
 
 In the above `n` and `m` refer to the number of digits which the inputs are encoded as.
 
+## Install
+
+Puya BigNumber is available on PyPI:
+
+```sh
+pip install puya-bignumber
+```
+
 ## Develop
 
 This module uses `poetry` as the package manager and Python environment manager. Please see [How to Build and Publish Python Packages With Poetry](https://www.freecodecamp.org/news/how-to-build-and-publish-python-packages-with-poetry/).
