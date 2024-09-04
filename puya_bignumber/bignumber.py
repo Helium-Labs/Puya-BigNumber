@@ -150,7 +150,7 @@ def biguint_to_digit(num: BigUInt) -> UInt256:
 
 
 @subroutine
-def multiply_word(
+def _multiply_word(
     digits: arc4.DynamicArray[UInt256], n: UInt64, d: UInt64, base: BigUInt
 ) -> arc4.DynamicArray[UInt256]:
     c: BigUInt = BigUInt(0)
@@ -166,7 +166,7 @@ def multiply_word(
 
 
 @subroutine
-def divide_word(
+def _divide_word(
     u_raw: arc4.DynamicArray[UInt256], v_digit: BigUInt, base: BigUInt
 ) -> Bytes:
     r: BigUInt = BigUInt(0)
@@ -205,12 +205,12 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
 
     v_raw_1: BigUInt = BigUInt.from_bytes(v_raw[1].bytes)
     if n == 1:
-        return divide_word(u_raw, v_raw_1, base)
+        return _divide_word(u_raw, v_raw_1, base)
 
     # Step D2: Normalize
     norm: BigUInt = base // (v_raw_1 + 1)
-    u: arc4.DynamicArray[UInt256] = multiply_word(u_raw, m + n, norm, base)
-    v: arc4.DynamicArray[UInt256] = multiply_word(v_raw, n, norm, base)
+    u: arc4.DynamicArray[UInt256] = _multiply_word(u_raw, m + n, norm, base)
+    v: arc4.DynamicArray[UInt256] = _multiply_word(v_raw, n, norm, base)
     v_1: BigUInt = BigUInt.from_bytes(v[1].bytes)
     # Step D3: Loop on j
     v_2: BigUInt = BigUInt.from_bytes(v[2].bytes)
