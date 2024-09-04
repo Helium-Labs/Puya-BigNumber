@@ -1,7 +1,7 @@
 from algopy import Bytes, BigUInt
 from puya_bignumber.bignumber import (
-    add_bytes,
-    subtract_bytes,
+    add,
+    subtract,
     big_endian_equal,
     multiply,
     divide,
@@ -30,7 +30,7 @@ def assert_add(a_bytes: bytes, b_bytes: bytes):
     ab_int = a_int + b_int
     ab_bytes = ab_int.to_bytes((ab_int.bit_length() + 8) // 8)
 
-    result: Bytes = add_bytes(Bytes(a_bytes), Bytes(b_bytes))
+    result: Bytes = add(Bytes(a_bytes), Bytes(b_bytes))
     assert big_endian_equal(
         Bytes(ab_bytes), result
     ), f"Add: Must be equal. {a_int}+{b_int}={ab_int}. Got {result}."
@@ -49,7 +49,7 @@ def assert_subtract(a_bytes: bytes, b_bytes: bytes):
 
     ab_int = a_int - b_int
 
-    result: Bytes = subtract_bytes(Bytes(a_bytes), Bytes(b_bytes))
+    result: Bytes = subtract(Bytes(a_bytes), Bytes(b_bytes))
     assert big_endian_equal(
         Bytes(ab_int.to_bytes(1 + (ab_int.bit_length() + 8) // 8)), result
     ), f"Subtract: Must be equal. {a_int}-{b_int}={ab_int}. Got {result}."

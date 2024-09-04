@@ -15,7 +15,7 @@ UInt256: typing.TypeAlias = arc4.BigUIntN[typing.Literal[256]]
 
 
 @subroutine
-def add_bytes(a_in: Bytes, b_in: Bytes) -> Bytes:
+def add(a_in: Bytes, b_in: Bytes) -> Bytes:
 
     length: UInt64 = enclosing_multiple(
         max_value(a_in.length, b_in.length), BIGINT_BYTE_SIZE
@@ -56,7 +56,7 @@ def add_bytes(a_in: Bytes, b_in: Bytes) -> Bytes:
 
 
 @subroutine
-def subtract_bytes(a_in: Bytes, b_in: Bytes) -> Bytes:
+def subtract(a_in: Bytes, b_in: Bytes) -> Bytes:
     # Assume a_in >= b_in
     # 0 - 0 case
     if a_in.length == 0 or a_in == bzero(b_in.length):
@@ -72,8 +72,8 @@ def subtract_bytes(a_in: Bytes, b_in: Bytes) -> Bytes:
     if a == b:
         return bzero(a.length)
     ones_complement: Bytes = ~b
-    twos_complement: Bytes = add_bytes(ones_complement, itob(1))
-    a_inv_b: Bytes = add_bytes(a, twos_complement)
+    twos_complement: Bytes = add(ones_complement, itob(1))
+    a_inv_b: Bytes = add(a, twos_complement)
     return a_inv_b[1:]
 
 
@@ -110,11 +110,11 @@ def multiply(X: Bytes, Y: Bytes) -> Bytes:
 
     P1: Bytes = multiply(xL, yL)
     P2: Bytes = multiply(xR, yR)
-    P3: Bytes = multiply(add_bytes(xL, xR), add_bytes(yL, yR))
-    P4: Bytes = subtract_bytes(subtract_bytes(P3, P1), P2)
+    P3: Bytes = multiply(add(xL, xR), add(yL, yR))
+    P4: Bytes = subtract(subtract(P3, P1), P2)
     shifted_P1: Bytes = concat(P1, bzero(2 * sh))
     shifted_P4: Bytes = concat(P4, bzero(sh))
-    return add_bytes(add_bytes(shifted_P1, shifted_P4), P2)
+    return add(add(shifted_P1, shifted_P4), P2)
 
 
 @subroutine
