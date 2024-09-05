@@ -32,9 +32,13 @@ All inputs to math functions are assumed to be big-endian encoded numbers unless
 from puya_bignumber import (
     add,
     subtract,
-    big_endian_equal,
+    equal,
     multiply,
     divide,
+    less_than,
+    greater_than,
+    barrett_reducer_factor,
+    mod_barrett_reduce,
 )
 # ... use the functions as you might expect, e.g. add(big_endian_bytes_a, big_endian_bytes_b)
 ```
