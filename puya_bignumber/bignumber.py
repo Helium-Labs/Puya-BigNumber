@@ -186,17 +186,12 @@ def _divide_word(
 def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
     assert u_num.length >= 1, f"u_num must have at least one byte {u_num}"
     assert v_num.length >= 1, "v_num must have at least one byte"
+    assert not equal(v_num, itob(0)), "Non-zero divisor"
 
-    u_raw: arc4.DynamicArray[UInt256] = _bytes_to_BE_digits(u_num)
-    v_raw: arc4.DynamicArray[UInt256] = _bytes_to_BE_digits(v_num)
-    assert v_raw[-1] != 0, "Non-zero divisor"
-
-    n: UInt64 = v_raw.length - 1
-    if u_raw.length < v_raw.length:
+    if less_than(u_num, v_num):
         # The divisor is larger than the dividend
         return itob(0)
-    if u_raw[-1] == 0:
-        # The dividend is 0
+    if equal(u_num, itob(0)):
         return itob(0)
 
     assert n >= 1, "At least 1 digit divisor"
