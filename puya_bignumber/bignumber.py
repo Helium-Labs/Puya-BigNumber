@@ -23,33 +23,32 @@ __all__ = [
 
 BIGINT_BYTE_SIZE: UInt64 = UInt64(64)
 UINT256_BYTE_SIZE: UInt64 = UInt64(32)
+BASE_UINT256: BigUInt = BigUInt(2**256)
 UInt256: typing.TypeAlias = arc4.BigUIntN[typing.Literal[256]]
 
 
 @subroutine
-def add(a_in: Bytes, b_in: Bytes) -> Bytes:
+def add(a: Bytes, b: Bytes) -> Bytes:
 
-    length: UInt64 = enclosing_multiple(
-        max_value(a_in.length, b_in.length), BIGINT_BYTE_SIZE
-    )
-    a: Bytes = pad(a_in, length)
-    b: Bytes = pad(b_in, length)
+    length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
+    a_digits: Bytes = pad(a, length)
+    b_digits: Bytes = pad(b, length)
 
-    assert a.length % BIGINT_BYTE_SIZE == 0, "a length must be multiple of width"
-    assert b.length % BIGINT_BYTE_SIZE == 0, "b length must be multiple of width"
+    assert a_digits.length % BIGINT_BYTE_SIZE == 0, "a length must be multiple of width"
+    assert b_digits.length % BIGINT_BYTE_SIZE == 0, "b length must be multiple of width"
 
-    n: UInt64 = a.length // BIGINT_BYTE_SIZE
+    n: UInt64 = a_digits.length // BIGINT_BYTE_SIZE
     result: Bytes = Bytes(b"")
     carry: UInt64 = UInt64(0)
     for i in reversed(urange(n)):
-        a_slice: BigUInt = BigUInt.from_bytes(
-            extract(a, i * BIGINT_BYTE_SIZE, BIGINT_BYTE_SIZE)
+        a_digit: BigUInt = BigUInt.from_bytes(
+            extract(a_digits, i * BIGINT_BYTE_SIZE, BIGINT_BYTE_SIZE)
         )
-        b_slice: BigUInt = BigUInt.from_bytes(
-            extract(b, i * BIGINT_BYTE_SIZE, BIGINT_BYTE_SIZE)
+        b_digit: BigUInt = BigUInt.from_bytes(
+            extract(b_digits, i * BIGINT_BYTE_SIZE, BIGINT_BYTE_SIZE)
         )
 
-        sum: BigUInt = a_slice + b_slice
+        sum: BigUInt = a_digit + b_digit
         sum_bytes: Bytes = pad(sum.bytes, BIGINT_BYTE_SIZE + 1)
         sum_carry = btoi(sum_bytes[0])
 
@@ -68,29 +67,27 @@ def add(a_in: Bytes, b_in: Bytes) -> Bytes:
 
 
 @subroutine
-def subtract(a_in: Bytes, b_in: Bytes) -> Bytes:
+def subtract(a: Bytes, b: Bytes) -> Bytes:
     # Assume a_in >= b_in
     # 0 - 0 case
-    if a_in.length == 0 or a_in == bzero(b_in.length):
-        return a_in
+    if a.length == 0 or a == bzero(b.length):
+        return a
     # a - 0 case
-    if b_in.length == 0 or b_in == bzero(b_in.length):
-        return a_in
-    length: UInt64 = enclosing_multiple(
-        max_value(a_in.length, b_in.length), BIGINT_BYTE_SIZE
-    )
-    a: Bytes = pad(a_in, length)
-    b: Bytes = pad(b_in, length)
-    if a == b:
-        return bzero(a.length)
-    ones_complement: Bytes = ~b
+    if b.length == 0 or b == bzero(b.length):
+        return a
+    length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
+    a_digits: Bytes = pad(a, length)
+    b_digits: Bytes = pad(b, length)
+    if a_digits == b_digits:
+        return bzero(a_digits.length)
+    ones_complement: Bytes = ~b_digits
     twos_complement: Bytes = add(ones_complement, itob(1))
-    a_inv_b: Bytes = add(a, twos_complement)
+    a_inv_b: Bytes = add(a_digits, twos_complement)
     return a_inv_b[1:]
 
 
 @subroutine
-def big_endian_equal(a: Bytes, b: Bytes) -> bool:
+def equal(a: Bytes, b: Bytes) -> bool:
     length: UInt64 = max_value(a.length, b.length)
     padded_a: Bytes = pad(a, length)
     padded_b: Bytes = pad(b, length)
@@ -129,7 +126,7 @@ def multiply(x: Bytes, y: Bytes) -> Bytes:
 
 
 @subroutine
-def _bytes_to_BE_digits(num: Bytes) -> arc4.DynamicArray[UInt256]:
+def _bytes_to_uint256_digits(num: Bytes) -> arc4.DynamicArray[UInt256]:
     digits: arc4.DynamicArray[UInt256] = arc4.DynamicArray[UInt256]()
     zero: UInt256 = UInt256.from_bytes(bzero(UINT256_BYTE_SIZE))
     digits.append(zero)
@@ -143,7 +140,7 @@ def _bytes_to_BE_digits(num: Bytes) -> arc4.DynamicArray[UInt256]:
 
 
 @subroutine
-def BE_digits_to_bytes(digits: arc4.DynamicArray[UInt256]) -> Bytes:
+def _uint256_digits_to_bytes(digits: arc4.DynamicArray[UInt256]) -> Bytes:
     return decode_dynamic_bytes(digits.bytes)
 
 
@@ -187,7 +184,7 @@ def _divide_word(
         q_digit: BigUInt = p // v_digit
         u_raw[i] = biguint_to_digit(q_digit)
         r = p - q_digit * v_digit
-    q: Bytes = BE_digits_to_bytes(u_raw)
+    q: Bytes = _uint256_digits_to_bytes(u_raw)
     return q
 
 
@@ -243,8 +240,8 @@ def greater_than(a: Bytes, b: Bytes) -> bool:
 
 # Algorithm D by Robert Knuth
 @subroutine
-def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
-    assert u_num.length >= 1, f"u_num must have at least one byte {u_num}"
+def divide(u_num: Bytes, v_num: Bytes) -> Bytes:
+    assert u_num.length >= 1, "u_num must have at least one byte"
     assert v_num.length >= 1, "v_num must have at least one byte"
     assert not equal(v_num, itob(0)), "Non-zero divisor"
 
@@ -254,6 +251,11 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
     if equal(u_num, itob(0)):
         return itob(0)
 
+    u_raw: arc4.DynamicArray[UInt256] = _bytes_to_uint256_digits(u_num)
+    v_raw: arc4.DynamicArray[UInt256] = _bytes_to_uint256_digits(v_num)
+
+    n: UInt64 = v_raw.length - 1
+
     assert n >= 1, "At least 1 digit divisor"
 
     m: UInt64 = u_raw.length - v_raw.length
@@ -261,32 +263,33 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
 
     v_raw_1: BigUInt = BigUInt.from_bytes(v_raw[1].bytes)
     if n == 1:
-        return _divide_word(u_raw, v_raw_1, base)
+        return _divide_word(u_raw, v_raw_1, BASE_UINT256)
 
     # Step D2: Normalize
-    norm: BigUInt = base // (v_raw_1 + 1)
-    u: arc4.DynamicArray[UInt256] = _multiply_word(u_raw, m + n, norm, base)
-    v: arc4.DynamicArray[UInt256] = _multiply_word(v_raw, n, norm, base)
+    norm: BigUInt = BASE_UINT256 // (v_raw_1 + 1)
+    u: arc4.DynamicArray[UInt256] = _multiply_word(u_raw, m + n, norm, BASE_UINT256)
+    v: arc4.DynamicArray[UInt256] = _multiply_word(v_raw, n, norm, BASE_UINT256)
     v_1: BigUInt = BigUInt.from_bytes(v[1].bytes)
     # Step D3: Loop on j
     v_2: BigUInt = BigUInt.from_bytes(v[2].bytes)
+
     for j in urange(m + 1):
         # Step D3: Calculate estimated q
         u_j: BigUInt = BigUInt.from_bytes(u[j].bytes)
         u_j1: BigUInt = BigUInt.from_bytes(u[j + 1].bytes)
 
-        qpart: BigUInt = base * u_j + u_j1
+        qpart: BigUInt = BASE_UINT256 * u_j + u_j1
         qhat: BigUInt = qpart // v_1
         if u_j >= v_1:
-            qhat = base - 1
+            qhat = BASE_UINT256 - 1
 
         # Correct quotient estimate if too large
         u_j2: BigUInt = BigUInt.from_bytes(u[j + 2].bytes)
-        qhat_test: BigUInt = qhat * v_1 + ((qhat * v_2) // base)
-        qhat_cond: BigUInt = qpart + (u_j2 // base)
+        qhat_test: BigUInt = qhat * v_1 + ((qhat * v_2) // BASE_UINT256)
+        qhat_cond: BigUInt = qpart + (u_j2 // BASE_UINT256)
         while qhat_test > qhat_cond:
             qhat -= 1
-            qhat_test = qhat * v_1 + ((qhat * v_2) // base)
+            qhat_test = qhat * v_1 + ((qhat * v_2) // BASE_UINT256)
 
         # Step D4: Multiply and subtract
         c: BigUInt = BigUInt(0)
@@ -295,16 +298,16 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
             u_ji: BigUInt = BigUInt.from_bytes(u[j + i].bytes)
             v_i: BigUInt = BigUInt.from_bytes(v[i].bytes)
             if c_is_neg:
-                # Handle case when c is considered negative
+                # Handle case when c is negative
                 if u_ji >= qhat * v_i + c:
-                    # Positive outcome
+                    # p is positive
                     p: BigUInt = u_ji - (qhat * v_i + c)
-                    p_mod_base: BigUInt = p % base
+                    p_mod_base: BigUInt = p % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
-                    c = p // base
+                    c = p // BASE_UINT256
                     c_is_neg = False
                 else:
-                    # Negative outcome
+                    # p is negative
                     p: BigUInt = (qhat * v_i + c) - u_ji
                     p_mod_base: BigUInt = (
                         BASE_UINT256 - (p % BASE_UINT256)
@@ -314,16 +317,16 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
                     c = (p // BASE_UINT256) + floor_div_adjuster
                     c_is_neg = True
             else:
-                # Handle case when c is considered positive
+                # Handle case when c is positive
                 if u_ji + c >= qhat * v_i:
-                    # Positive outcome
+                    # p is positive
                     p: BigUInt = (u_ji + c) - qhat * v_i
                     p_mod_base: BigUInt = p % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
                     c = p // BASE_UINT256
                     c_is_neg = False
                 else:
-                    # Negative outcome
+                    # p is negative
                     p: BigUInt = (qhat * v_i) - (u_ji + c)
                     p_mod_base: BigUInt = (
                         BASE_UINT256 - (p % BASE_UINT256)
