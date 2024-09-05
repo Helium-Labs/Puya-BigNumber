@@ -80,41 +80,40 @@ def subtract(a_in: Bytes, b_in: Bytes) -> Bytes:
 @subroutine
 def big_endian_equal(a: Bytes, b: Bytes) -> bool:
     length: UInt64 = max_value(a.length, b.length)
-    padded_a = pad(a, length)
-    padded_b = pad(b, length)
-    are_equal: bool = padded_a == padded_b
-    return are_equal
+    padded_a: Bytes = pad(a, length)
+    padded_b: Bytes = pad(b, length)
+    return padded_a == padded_b
 
 
 # Karatsuba algorithm by Anatoly Karatsuba
 @subroutine
-def multiply(X: Bytes, Y: Bytes) -> Bytes:
-    length: UInt64 = enclosing_multiple(max_value(X.length, Y.length), BIGINT_BYTE_SIZE)
-    X: Bytes = pad(X, length)
-    Y: Bytes = pad(Y, length)
+def multiply(x: Bytes, y: Bytes) -> Bytes:
+    length: UInt64 = enclosing_multiple(max_value(x.length, y.length), BIGINT_BYTE_SIZE)
+    x: Bytes = pad(x, length)
+    y: Bytes = pad(y, length)
 
-    N: UInt64 = X.length
-    if N <= BIGINT_BYTE_SIZE:
-        XB: BigUInt = BigUInt.from_bytes(X)
-        YB: BigUInt = BigUInt.from_bytes(Y)
-        XYB: BigUInt = XB * YB
-        return XYB.bytes
+    n: UInt64 = x.length
+    if n <= BIGINT_BYTE_SIZE:
+        x_as_bigint: BigUInt = BigUInt.from_bytes(x)
+        y_as_bigint: BigUInt = BigUInt.from_bytes(y)
+        xy: BigUInt = x_as_bigint * y_as_bigint
+        return xy.bytes
 
-    fh: UInt64 = N // 2
-    sh: UInt64 = N - fh
+    first_half: UInt64 = n // 2
+    second_half: UInt64 = n - first_half
 
-    xL: Bytes = X[:fh]
-    xR: Bytes = X[fh:]
-    yL: Bytes = Y[:fh]
-    yR: Bytes = Y[fh:]
+    x_left: Bytes = x[:first_half]
+    x_right: Bytes = x[first_half:]
+    y_left: Bytes = y[:first_half]
+    y_right: Bytes = y[first_half:]
 
-    P1: Bytes = multiply(xL, yL)
-    P2: Bytes = multiply(xR, yR)
-    P3: Bytes = multiply(add(xL, xR), add(yL, yR))
-    P4: Bytes = subtract(subtract(P3, P1), P2)
-    shifted_P1: Bytes = concat(P1, bzero(2 * sh))
-    shifted_P4: Bytes = concat(P4, bzero(sh))
-    return add(add(shifted_P1, shifted_P4), P2)
+    p_1: Bytes = multiply(x_left, y_left)
+    p_2: Bytes = multiply(x_right, y_right)
+    p_3: Bytes = multiply(add(x_left, x_right), add(y_left, y_right))
+    p_4: Bytes = subtract(subtract(p_3, p_1), p_2)
+    shifted_P1: Bytes = concat(p_1, bzero(2 * second_half))
+    shifted_P4: Bytes = concat(p_4, bzero(second_half))
+    return add(add(shifted_P1, shifted_P4), p_2)
 
 
 @subroutine
@@ -157,8 +156,8 @@ def _multiply_word(
     for i in reversed(urange(1, n + 1)):
         digit: BigUInt = BigUInt.from_bytes(digits[i].bytes)
         p: BigUInt = d * digit + c
-        pModBase: BigUInt = p % base
-        normalized_digit: UInt256 = biguint_to_digit(pModBase)
+        p_mod_base: BigUInt = p % base
+        normalized_digit: UInt256 = biguint_to_digit(p_mod_base)
         digits[i] = normalized_digit
         c = p // base
     digits[0] = biguint_to_digit(c)
@@ -238,23 +237,20 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
         for i in reversed(urange(1, n + 1)):
             u_ji: BigUInt = BigUInt.from_bytes(u[j + i].bytes)
             v_i: BigUInt = BigUInt.from_bytes(v[i].bytes)
-            assert c >= 0, "C must be Positive"
             if c_is_neg:
                 # Handle case when c is considered negative
                 if u_ji >= qhat * v_i + c:
                     # Positive outcome
                     p: BigUInt = u_ji - (qhat * v_i + c)
-                    assert p >= 0, "P must be Positive"
-                    pModBase: BigUInt = p % base
-                    u[j + i] = biguint_to_digit(pModBase)
+                    p_mod_base: BigUInt = p % base
+                    u[j + i] = biguint_to_digit(p_mod_base)
                     c = p // base
                     c_is_neg = False
                 else:
                     # Negative outcome
                     p: BigUInt = (qhat * v_i + c) - u_ji
-                    assert p >= 0, "P must be Positive"
-                    pModBase: BigUInt = base - (p % base)
-                    u[j + i] = biguint_to_digit(pModBase)
+                    p_mod_base: BigUInt = base - (p % base)
+                    u[j + i] = biguint_to_digit(p_mod_base)
                     c = (p // base) + 1  # Adjust for base correction
                     c_is_neg = True
             else:
@@ -262,17 +258,15 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
                 if u_ji + c >= qhat * v_i:
                     # Positive outcome
                     p: BigUInt = (u_ji + c) - qhat * v_i
-                    assert p >= 0, "P must be Positive"
-                    pModBase: BigUInt = p % base
-                    u[j + i] = biguint_to_digit(pModBase)
+                    p_mod_base: BigUInt = p % base
+                    u[j + i] = biguint_to_digit(p_mod_base)
                     c = p // base
                     c_is_neg = False
                 else:
                     # Negative outcome
                     p: BigUInt = (qhat * v_i) - (u_ji + c)
-                    assert p >= 0, "P must be Positive"
-                    pModBase: BigUInt = base - (p % base)
-                    u[j + i] = biguint_to_digit(pModBase)
+                    p_mod_base: BigUInt = base - (p % base)
+                    u[j + i] = biguint_to_digit(p_mod_base)
                     c = (p // base) + 1  # Adjust for base correction
                     c_is_neg = True
 
@@ -281,7 +275,7 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
             # Step D6: Add back
             qhat -= 1
 
-        qhat_digit = biguint_to_digit(qhat)
+        qhat_digit: UInt256 = biguint_to_digit(qhat)
         q.append(qhat_digit)
 
     q_as_bytes: Bytes = BE_digits_to_bytes(q)

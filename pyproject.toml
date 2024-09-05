@@ -12,10 +12,13 @@ packages = [{include = "puya_bignumber"}]
 python = "^3.12"
 py-algorand-sdk = "^2.6.1"
 algorand-python = "^2.0.1"
-algorand-python-testing = "^0.4.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.2"
+algorand-python-testing = "^0.4.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.8.0"
 
 [build-system]
 requires = ["poetry-core"]
