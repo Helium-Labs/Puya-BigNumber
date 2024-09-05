@@ -1,5 +1,5 @@
 from algopy import Bytes, BigUInt
-from puya_bignumber.bignumber import (
+from puya_bignumber import (
     add,
     subtract,
     big_endian_equal,
