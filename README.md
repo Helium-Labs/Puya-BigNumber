@@ -22,6 +22,21 @@ Puya BigNumber is available on PyPI:
 pip install puya-bignumber
 ```
 
+## Usage
+
+All inputs to math functions are assumed to be big-endian encoded numbers unless explicitly stated otherwise.
+
+```python
+from puya_bignumber import (
+    add,
+    subtract,
+    big_endian_equal,
+    multiply,
+    divide,
+)
+# ... use the functions as you might expect, e.g. add(big_endian_bytes_a, big_endian_bytes_b)
+```
+
 ## Develop
 
 This module uses `poetry` as the package manager and Python environment manager. Please see [How to Build and Publish Python Packages With Poetry](https://www.freecodecamp.org/news/how-to-build-and-publish-python-packages-with-poetry/).
