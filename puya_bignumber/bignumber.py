@@ -9,7 +9,17 @@ from .common import (
 )
 import typing
 
-__all__ = ["add", "subtract", "big_endian_equal", "multiply", "divide"]
+__all__ = [
+    "add",
+    "subtract",
+    "equal",
+    "multiply",
+    "divide",
+    "less_than",
+    "greater_than",
+    "barrett_reducer_factor",
+    "mod_barrett_reduce",
+]
 
 BIGINT_BYTE_SIZE: UInt64 = UInt64(64)
 UINT256_BYTE_SIZE: UInt64 = UInt64(32)
@@ -181,6 +191,56 @@ def _divide_word(
     return q
 
 
+@subroutine
+def less_than(a: Bytes, b: Bytes) -> bool:
+
+    length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
+    a_digits: Bytes = pad(a, length)
+    b_digits: Bytes = pad(b, length)
+
+    assert a_digits.length % BIGINT_BYTE_SIZE == 0, "a length must be multiple of width"
+    assert b_digits.length % BIGINT_BYTE_SIZE == 0, "b length must be multiple of width"
+
+    n: UInt64 = a_digits.length // BIGINT_BYTE_SIZE
+    for i in urange(n):
+        a_digit: BigUInt = BigUInt.from_bytes(
+            extract(a_digits, i * BIGINT_BYTE_SIZE, BIGINT_BYTE_SIZE)
+        )
+        b_digit: BigUInt = BigUInt.from_bytes(
+            extract(b_digits, i * BIGINT_BYTE_SIZE, BIGINT_BYTE_SIZE)
+        )
+        if a_digit < b_digit:
+            return True
+        if a_digit > b_digit:
+            return False
+    return False
+
+
+@subroutine
+def greater_than(a: Bytes, b: Bytes) -> bool:
+
+    length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
+    a_digits: Bytes = pad(a, length)
+    b_digits: Bytes = pad(b, length)
+
+    assert a_digits.length % BIGINT_BYTE_SIZE == 0, "a length must be multiple of width"
+    assert b_digits.length % BIGINT_BYTE_SIZE == 0, "b length must be multiple of width"
+
+    n: UInt64 = a_digits.length // BIGINT_BYTE_SIZE
+    for i in urange(n):
+        a_digit: BigUInt = BigUInt.from_bytes(
+            extract(a_digits, i * BIGINT_BYTE_SIZE, BIGINT_BYTE_SIZE)
+        )
+        b_digit: BigUInt = BigUInt.from_bytes(
+            extract(b_digits, i * BIGINT_BYTE_SIZE, BIGINT_BYTE_SIZE)
+        )
+        if a_digit > b_digit:
+            return True
+        if a_digit < b_digit:
+            return False
+    return False
+
+
 # Algorithm D by Robert Knuth
 @subroutine
 def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
@@ -281,6 +341,45 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
         qhat_digit: UInt256 = biguint_to_digit(qhat)
         q.append(qhat_digit)
 
-    q_as_bytes: Bytes = BE_digits_to_bytes(q)
+    return _uint256_digits_to_bytes(q)
 
-    return q_as_bytes
+
+@subroutine
+def _barrett_reducer_shift(mod: Bytes) -> UInt64:
+    return mod.length * 2
+
+
+@subroutine
+def _calc_mod_barrett_reduce(a: Bytes, mod: Bytes, precomputed_factor: Bytes) -> Bytes:
+    shift: UInt64 = _barrett_reducer_shift(mod)
+    a_factor: Bytes = multiply(a, precomputed_factor)
+    q: Bytes = extract(a_factor, 0, a_factor.length - shift)
+    r: Bytes = subtract(a, multiply(q, mod))
+    if less_than(r, mod):
+        return r
+    return subtract(r, mod)
+
+
+@subroutine
+def barrett_reducer_factor(mod: Bytes) -> Bytes:
+    assert not equal(mod, itob(0)), "Must have mod != 0"
+    assert not equal(
+        mod & subtract(mod, itob(1)), itob(0)
+    ), "mod cannot be a power of 2"
+
+    shift: UInt64 = _barrett_reducer_shift(mod)
+    one_byte: Bytes = extract(itob(1), 7, 1)
+    two_k: Bytes = concat(one_byte, bzero(shift))
+    return divide(two_k, mod)
+
+
+# Barrett Reduction algorithm by P.D. Barrett
+@subroutine
+def mod_barrett_reduce(a: Bytes, mod: Bytes, precomputed_factor: Bytes) -> Bytes:
+    # Assume: 0 <= a < b ** 2, b > 0, and b is not a power of two
+    b_squared: Bytes = multiply(mod, mod)
+    assert less_than(a, b_squared), "Must have 0 <= a < b ** 2"
+    assert not equal(mod, itob(0)), "Must have b != 0"
+    assert not equal(mod & subtract(mod, itob(1)), itob(0)), "b cannot be a power of 2"
+
+    return _calc_mod_barrett_reduce(a, mod, precomputed_factor)
