@@ -246,29 +246,35 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
                 else:
                     # Negative outcome
                     p: BigUInt = (qhat * v_i + c) - u_ji
-                    p_mod_base: BigUInt = base - (p % base)
+                    p_mod_base: BigUInt = (
+                        BASE_UINT256 - (p % BASE_UINT256)
+                    ) % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
-                    c = (p // base) + 1  # Adjust for base correction
+                    floor_div_adjuster: UInt64 = 1 if p_mod_base != 0 else 0
+                    c = (p // BASE_UINT256) + floor_div_adjuster
                     c_is_neg = True
             else:
                 # Handle case when c is considered positive
                 if u_ji + c >= qhat * v_i:
                     # Positive outcome
                     p: BigUInt = (u_ji + c) - qhat * v_i
-                    p_mod_base: BigUInt = p % base
+                    p_mod_base: BigUInt = p % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
-                    c = p // base
+                    c = p // BASE_UINT256
                     c_is_neg = False
                 else:
                     # Negative outcome
                     p: BigUInt = (qhat * v_i) - (u_ji + c)
-                    p_mod_base: BigUInt = base - (p % base)
+                    p_mod_base: BigUInt = (
+                        BASE_UINT256 - (p % BASE_UINT256)
+                    ) % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
-                    c = (p // base) + 1  # Adjust for base correction
+                    floor_div_adjuster: UInt64 = 1 if p_mod_base != 0 else 0
+                    c = (p // BASE_UINT256) + floor_div_adjuster
                     c_is_neg = True
 
         # Step D5: Test remainder
-        if c > u_j and c_is_neg and (c - u_j) >= base:
+        if c > u_j and c_is_neg:
             # Step D6: Add back
             qhat -= 1
 
