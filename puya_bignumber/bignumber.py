@@ -9,6 +9,8 @@ from .common import (
 )
 import typing
 
+__all__ = ["add", "subtract", "big_endian_equal", "multiply", "divide"]
+
 BIGINT_BYTE_SIZE: UInt64 = UInt64(64)
 UINT256_BYTE_SIZE: UInt64 = UInt64(32)
 UInt256: typing.TypeAlias = arc4.BigUIntN[typing.Literal[256]]
@@ -117,7 +119,7 @@ def multiply(x: Bytes, y: Bytes) -> Bytes:
 
 
 @subroutine
-def bytes_to_BE_digits(num: Bytes) -> arc4.DynamicArray[UInt256]:
+def _bytes_to_BE_digits(num: Bytes) -> arc4.DynamicArray[UInt256]:
     digits: arc4.DynamicArray[UInt256] = arc4.DynamicArray[UInt256]()
     zero: UInt256 = UInt256.from_bytes(bzero(UINT256_BYTE_SIZE))
     digits.append(zero)
@@ -185,8 +187,8 @@ def divide(u_num: Bytes, v_num: Bytes, base: BigUInt) -> Bytes:
     assert u_num.length >= 1, f"u_num must have at least one byte {u_num}"
     assert v_num.length >= 1, "v_num must have at least one byte"
 
-    u_raw: arc4.DynamicArray[UInt256] = bytes_to_BE_digits(u_num)
-    v_raw: arc4.DynamicArray[UInt256] = bytes_to_BE_digits(v_num)
+    u_raw: arc4.DynamicArray[UInt256] = _bytes_to_BE_digits(u_num)
+    v_raw: arc4.DynamicArray[UInt256] = _bytes_to_BE_digits(v_num)
     assert v_raw[-1] != 0, "Non-zero divisor"
 
     n: UInt64 = v_raw.length - 1
