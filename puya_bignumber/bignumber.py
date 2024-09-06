@@ -358,9 +358,9 @@ def _calc_mod_barrett_reduce(a: Bytes, mod: Bytes, precomputed_factor: Bytes) ->
     a_factor: Bytes = multiply(a, precomputed_factor)
     q: Bytes = extract(a_factor, 0, a_factor.length - shift)
     r: Bytes = subtract(a, multiply(q, mod))
-    if less_than(r, mod):
-        return r
-    return subtract(r, mod)
+    if not less_than(r, mod):
+        r = subtract(r, mod)
+    return extract(r, r.length - mod.length, mod.length)
 
 
 @subroutine
