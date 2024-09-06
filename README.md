@@ -1,6 +1,6 @@
 # Puya BigNumber
 
-A library for mathematical operations involving (very) large numbers in Puya for Algorand. It supports addition, subtraction, multiplication, division, comparison and remainder calculation of large big-endian encoded numbers as byte strings. The library is implemented using some of the most efficient algorithms available in the literature, such as Karatsuba multiplication, Algorithm D by Donald Knuth for multi-word division, and Barrett Reduction for remainder calculation.
+A library for mathematical operations involving (very) large numbers in Puya for Algorand. It supports addition, subtraction, multiplication, division, comparison, remainder calculation (using Barrett Reduction), and modular exponentiation (using Barrett Reduction) of large big-endian encoded numbers as byte strings. The library is implemented using some of the most efficient algorithms available in the literature, such as Karatsuba multiplication, Algorithm D by Donald Knuth for multi-word division, and Barrett Reduction for remainder calculation.
 
 ## Features
 
@@ -9,7 +9,8 @@ A library for mathematical operations involving (very) large numbers in Puya for
  - Subtraction: `O(n)` time complexity with 512 bit sized digits
  - Multiplication: `O(n**1.58)` time complexity (Karatsuba multiplication) with 512 bit sized digits
  - Division: `O(n*m)` time complexity (Algorithm D by Donald Knuth) with 256 bit sized digits
- - Barrett Reduction for Modular Arithmetic: `O(n**1.58)` time complexity with 512 bit sized digits
+ - Remainder with Barrett Reduction: `O(n**1.58)` time complexity with 512 bit sized digits
+ - Modular Exponentiation with Barrett Reduction: `O(exp.bit_length x n**1.58)` time complexity with 512 bit sized digits
  - Less than, greater than and equal comparison: `O(max(n,m))` time complexity with 512 bit sized digits
  - Algorand Puya smart contract HLL compatibility
  - Algorand-python-testing framework
@@ -37,8 +38,9 @@ from puya_bignumber import (
     divide,
     less_than,
     greater_than,
-    barrett_reducer_factor,
     mod_barrett_reduce,
+    barrett_reducer_factor,
+    modexp_barrett_reduce,
 )
 # ... use the functions as you might expect, e.g. add(big_endian_bytes_a, big_endian_bytes_b)
 ```
