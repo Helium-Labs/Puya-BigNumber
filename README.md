@@ -32,7 +32,7 @@ pip install puya-bignumber
 All inputs to math functions are assumed to be big-endian encoded numbers unless explicitly stated otherwise.
 
 ```python
-from puya_bignumber import (
+from puya_bignumber.bignumber import (
     add,
     subtract,
     equal,
