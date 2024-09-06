@@ -4,18 +4,20 @@ A library for mathematical operations involving (very) large numbers in Puya for
 
 ## Features
 
- - Supports numbers up to `1024 bytes` (8192 bits) in length 
- - Addition: `O(n)` time complexity with 512 bit sized digits
- - Subtraction: `O(n)` time complexity with 512 bit sized digits
- - Multiplication: `O(n**1.58)` time complexity (Karatsuba multiplication) with 512 bit sized digits
- - Division: `O(n*m)` time complexity (Algorithm D by Donald Knuth) with 256 bit sized digits
- - Remainder with Barrett Reduction: `O(n**1.58)` time complexity with 512 bit sized digits
- - Modular Exponentiation with Barrett Reduction: `O(exp.bit_length x n**1.58)` time complexity with 512 bit sized digits
- - Less than, greater than and equal comparison: `O(max(n,m))` time complexity with 512 bit sized digits
- - Algorand Puya smart contract HLL compatibility
- - Algorand-python-testing framework
+- Supports up to `1024 bytes` (8192 bits) wide numbers
+- Algorand Puya smart contract HLL compatibility
+- Algorand-python-testing framework
 
-In the above `n` and `m` refer to the number of digits which the inputs are encoded as.
+ Features the following operators:
+- **Addition**: `O(n)` time complexity with 512 bit sized digits
+- **Subtraction**: `O(n)` time complexity with 512 bit sized digits
+- **Multiplication**: `O(n**1.58)` time complexity (Karatsuba multiplication) with 512 bit sized digits
+- **Division**: `O(n*m)` time complexity (Algorithm D by Donald Knuth) with 256 bit sized digits
+- **Remainder with Barrett Reduction**: `O(n**1.58)` time complexity with 512 bit sized digits
+- **Modular Exponentiation with Barrett Reduction**: `O(exp.bit_length x n**1.58)` time complexity with 512 bit sized digits
+- **Less than, greater than and equal comparison**: `O(max(n,m))` time complexity with 512 bit sized digits
+
+In the above `n` and `m` refer to the number of digits in the input.
 
 ## Install
 
