@@ -4,7 +4,7 @@ A library for mathematical operations involving (very) large numbers in Puya for
 
 ## Features
 
- - Supports numbers up to `2048 bytes` (16384 bits) in length 
+ - Supports numbers up to `1024 bytes` (8192 bits) in length 
  - Addition: `O(n)` time complexity with 512 bit sized digits
  - Subtraction: `O(n)` time complexity with 512 bit sized digits
  - Multiplication: `O(n**1.58)` time complexity (Karatsuba multiplication) with 512 bit sized digits
