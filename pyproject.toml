@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "puya-bignumber"
-version = "0.3.3"
+version = "0.3.4"
 description = "Math Library for big numbers in Puya for Algorand"
 authors = ["Winton Nathan-Roberts <winton.nathan.roberts@gmail.com>"]
 readme = "README.md"
