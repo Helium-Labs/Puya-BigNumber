@@ -379,10 +379,12 @@ def barrett_reducer_factor(mod: Bytes) -> Bytes:
 # Barrett Reduction algorithm by P.D. Barrett
 @subroutine
 def mod_barrett_reduce(a: Bytes, mod: Bytes, precomputed_factor: Bytes) -> Bytes:
-    # Assume: 0 <= a < b ** 2, b > 0, and b is not a power of two
-    b_squared: Bytes = multiply(mod, mod)
-    assert less_than(a, b_squared), "Must have 0 <= a < b ** 2"
-    assert not equal(mod, itob(0)), "Must have b != 0"
-    assert not equal(mod & subtract(mod, itob(1)), itob(0)), "b cannot be a power of 2"
+    # Assume: 0 <= a < mod ** 2, mod > 0, and mod is not a power of two
+    mod_squared: Bytes = multiply(mod, mod)
+    assert less_than(a, mod_squared), "Must have 0 <= a < mod ** 2"
+    assert not equal(mod, itob(0)), "Must have mod != 0"
+    assert not equal(
+        mod & subtract(mod, itob(1)), itob(0)
+    ), "mod cannot be a power of 2"
 
     return _calc_mod_barrett_reduce(a, mod, precomputed_factor)
