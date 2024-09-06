@@ -9,10 +9,19 @@ from puya_bignumber import (
     greater_than,
     mod_barrett_reduce,
     barrett_reducer_factor,
+    modexp_barrett_reduce,
 )
 import os
 import random
 import base64
+
+
+def get_barrett_precomputed_factor(mod: bytes) -> bytes:
+    mod_int: int = int.from_bytes(mod)
+    shift: int = len(mod) * 2 * 8
+    factor: int = 2**shift // mod_int
+    factor_bytes: bytes = factor.to_bytes((factor.bit_length() + 7) // 8)
+    return factor_bytes
 
 
 def assert_equal(a_bytes: bytes, b_bytes: bytes):
@@ -38,31 +47,39 @@ def assert_less_than(a_bytes: bytes, b_bytes: bytes):
     ), f"Less Than: Must be equal. {a_int}<{b_int}={ab_int}. Got {result}."
 
 
-def assert_mod_barrett_reduce(a_bytes: bytes, b_bytes: bytes):
+def assert_modexp_barrett_reduce(base: bytes, exp: bytes, mod: bytes):
+    base_int: int = int.from_bytes(base)
+    exp_int: int = int.from_bytes(exp)
+    mod_int: int = int.from_bytes(mod)
+    expected_int: int = pow(base_int, exp_int, mod_int)
+    ab_bytes = expected_int.to_bytes((expected_int.bit_length() + 7) // 8)
+    factor_bytes: bytes = get_barrett_precomputed_factor(mod)
+    result = modexp_barrett_reduce(
+        Bytes(base), Bytes(exp), Bytes(mod), Bytes(factor_bytes)
+    )
+    assert equal(
+        Bytes(ab_bytes), result
+    ), f"Modulo with Barrett Reduction: Must be equal. ({base_int}^{exp_int})%{mod_int}={expected_int}. Got {result}."
+
+
+def assert_mod_barrett_reduce(a_bytes: bytes, mod: bytes):
     a_int: int = int.from_bytes(a_bytes)
-    b_int: int = int.from_bytes(b_bytes)
+    b_int: int = int.from_bytes(mod)
     ab_int: int = a_int % b_int
     ab_bytes = ab_int.to_bytes((ab_int.bit_length() + 7) // 8)
-    shift: int = len(b_bytes) * 2 * 8
-    two_k: int = 2**shift
-
-    factor: int = two_k // b_int
-    factor_bytes: bytes = factor.to_bytes((factor.bit_length() + 7) // 8)
-    result = mod_barrett_reduce(Bytes(a_bytes), Bytes(b_bytes), Bytes(factor_bytes))
+    factor_bytes: bytes = get_barrett_precomputed_factor(mod)
+    result = mod_barrett_reduce(Bytes(a_bytes), Bytes(mod), Bytes(factor_bytes))
     assert equal(
         Bytes(ab_bytes), result
     ), f"Modulo with Barrett Reduction: Must be equal. {a_int}%{b_int}={ab_int}. Got {result}."
 
 
 def assert_barrett_reducer_factor(mod: bytes):
-    mod_int: int = int.from_bytes(mod)
-    shift: int = len(mod) * 2 * 8
-    factor: int = 2**shift // mod_int
-    factor_bytes: bytes = factor.to_bytes((factor.bit_length() + 7) // 8)
+    factor: bytes = get_barrett_precomputed_factor(mod)
     result = barrett_reducer_factor(Bytes(mod))
     assert equal(
-        Bytes(factor_bytes), result
-    ), f"Barrett Reducter Factor: Must be equal. Factor={factor_bytes}. Got {result}."
+        Bytes(factor), result
+    ), f"Barrett Reducter Factor: Must be equal. Factor={factor}. Got {result}."
 
 
 def assert_greater_than(a_bytes: bytes, b_bytes: bytes):
@@ -175,3 +192,6 @@ def test_all():
         a_bytes = a.to_bytes((a.bit_length() + 7) // 8)
         assert_barrett_reducer_factor(mod_bytes)
         assert_mod_barrett_reduce(a_bytes, mod_bytes)
+        MAX_EXP_WIDTH = 64
+        exp_bytes = os.urandom(random.randint(2, MAX_EXP_WIDTH))
+        assert_modexp_barrett_reduce(a_bytes, exp_bytes, mod_bytes)
