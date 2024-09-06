@@ -1,5 +1,5 @@
 from algopy import arc4, Bytes, subroutine, BigUInt, UInt64, urange
-from algopy.op import substring, bzero, concat, extract, itob, btoi
+from algopy.op import substring, bzero, concat, extract, itob, btoi, getbit
 from .common import (
     pad,
     max_value,
@@ -19,6 +19,7 @@ __all__ = [
     "greater_than",
     "barrett_reducer_factor",
     "mod_barrett_reduce",
+    "modexp_barrett_reduce",
 ]
 
 BIGINT_BYTE_SIZE: UInt64 = UInt64(64)
@@ -388,3 +389,28 @@ def mod_barrett_reduce(a: Bytes, mod: Bytes, precomputed_factor: Bytes) -> Bytes
     ), "mod cannot be a power of 2"
 
     return _calc_mod_barrett_reduce(a, mod, precomputed_factor)
+
+
+# Modular Exponentiation by Squaring
+@subroutine
+def modexp_barrett_reduce(
+    base: Bytes, exp: Bytes, mod: Bytes, precomputed_factor: Bytes
+) -> Bytes:
+    # Validate Barrett Reduction assumptions. Validating here validates all successive mod assumptions.
+    mod_squared: Bytes = multiply(mod, mod)
+    assert less_than(base, mod_squared), "Must have 0 <= a < mod ** 2"
+    assert not equal(mod, itob(0)), "Must have mod != 0"
+    assert not equal(
+        mod & subtract(mod, itob(1)), itob(0)
+    ), "mod cannot be a power of 2"
+
+    result: Bytes = itob(1)
+    base = _calc_mod_barrett_reduce(base, mod, precomputed_factor)
+    for bit_i in reversed(urange(exp.length * 8)):
+        bit: UInt64 = getbit(exp, bit_i)
+        if bit == 1:
+            result = _calc_mod_barrett_reduce(
+                multiply(result, base), mod, precomputed_factor
+            )
+        base = _calc_mod_barrett_reduce(multiply(base, base), mod, precomputed_factor)
+    return result
