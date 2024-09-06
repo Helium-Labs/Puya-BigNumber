@@ -2,6 +2,8 @@
 
 A library for mathematical operations involving (very) large numbers in Puya for Algorand. It supports addition, subtraction, multiplication, division, comparison, remainder calculation (using Barrett Reduction), and modular exponentiation (using Barrett Reduction) of large big-endian encoded numbers as byte strings. The library is implemented using some of the most efficient algorithms available in the literature, such as Karatsuba multiplication, Algorithm D by Donald Knuth for multi-word division, and Barrett Reduction for remainder calculation.
 
+⚠️ Not officially production ready until documentation updated to indicate otherwise. Use at your own risk.
+
 ## Features
 
 - Supports up to `1024 bytes` (8192 bits) wide numbers
