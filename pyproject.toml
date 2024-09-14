@@ -6,7 +6,7 @@ authors = ["Winton Nathan-Roberts <winton.nathan.roberts@gmail.com>"]
 readme = "README.md"
 license = "GNU GPLv3"
 repository = "https://github.com/Helium-Labs/Puya-BigNumber"
-packages = [{include = "puya_bignumber"}]
+packages = [{include = "puya_bignumber"}, {include = "puya_bignumber/py.typed"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
