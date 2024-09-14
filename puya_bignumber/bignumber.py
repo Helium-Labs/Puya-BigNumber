@@ -22,15 +22,15 @@ __all__ = [
     "modexp_barrett_reduce",
 ]
 
-BIGINT_BYTE_SIZE: UInt64 = UInt64(64)
-UINT256_BYTE_SIZE: UInt64 = UInt64(32)
-BASE_UINT256: BigUInt = BigUInt(2**256)
+BIGINT_BYTE_SIZE_INT: int = 64
+UINT256_BYTE_SIZE_INT: int = 32
+BASE_UINT256_INT: int = 2**256
 UInt256: typing.TypeAlias = arc4.BigUIntN[typing.Literal[256]]
 
 
 @subroutine
 def add(a: Bytes, b: Bytes) -> Bytes:
-
+    BIGINT_BYTE_SIZE: UInt64 = UInt64(BIGINT_BYTE_SIZE_INT)
     length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
     a_digits: Bytes = pad(a, length)
     b_digits: Bytes = pad(b, length)
@@ -76,6 +76,7 @@ def subtract(a: Bytes, b: Bytes) -> Bytes:
     # a - 0 case
     if b.length == 0 or b == bzero(b.length):
         return a
+    BIGINT_BYTE_SIZE: UInt64 = UInt64(BIGINT_BYTE_SIZE_INT)
     length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
     a_digits: Bytes = pad(a, length)
     b_digits: Bytes = pad(b, length)
@@ -97,10 +98,13 @@ def equal(a: Bytes, b: Bytes) -> bool:
 
 # Karatsuba algorithm by Anatoly Karatsuba
 @subroutine
-def multiply(x: Bytes, y: Bytes) -> Bytes:
-    length: UInt64 = enclosing_multiple(max_value(x.length, y.length), BIGINT_BYTE_SIZE)
-    x: Bytes = pad(x, length)
-    y: Bytes = pad(y, length)
+def multiply(x_in: Bytes, y_in: Bytes) -> Bytes:
+    BIGINT_BYTE_SIZE: UInt64 = UInt64(BIGINT_BYTE_SIZE_INT)
+    length: UInt64 = enclosing_multiple(
+        max_value(x_in.length, y_in.length), BIGINT_BYTE_SIZE
+    )
+    x: Bytes = pad(x_in, length)
+    y: Bytes = pad(y_in, length)
 
     n: UInt64 = x.length
     if n <= BIGINT_BYTE_SIZE:
@@ -128,6 +132,7 @@ def multiply(x: Bytes, y: Bytes) -> Bytes:
 
 @subroutine
 def _bytes_to_uint256_digits(num: Bytes) -> arc4.DynamicArray[UInt256]:
+    UINT256_BYTE_SIZE: UInt64 = UInt64(UINT256_BYTE_SIZE_INT)
     digits: arc4.DynamicArray[UInt256] = arc4.DynamicArray[UInt256]()
     zero: UInt256 = UInt256.from_bytes(bzero(UINT256_BYTE_SIZE))
     digits.append(zero)
@@ -147,6 +152,7 @@ def _uint256_digits_to_bytes(digits: arc4.DynamicArray[UInt256]) -> Bytes:
 
 @subroutine
 def biguint_to_digit(num: BigUInt) -> UInt256:
+    UINT256_BYTE_SIZE: UInt64 = UInt64(UINT256_BYTE_SIZE_INT)
     if num.bytes.length == 0:
         return UInt256.from_bytes(bzero(UINT256_BYTE_SIZE))
 
@@ -160,7 +166,7 @@ def biguint_to_digit(num: BigUInt) -> UInt256:
 
 @subroutine
 def _multiply_word(
-    digits: arc4.DynamicArray[UInt256], n: UInt64, d: UInt64, base: BigUInt
+    digits: arc4.DynamicArray[UInt256], n: UInt64, d: BigUInt, base: BigUInt
 ) -> arc4.DynamicArray[UInt256]:
     c: BigUInt = BigUInt(0)
     for i in reversed(urange(1, n + 1)):
@@ -191,7 +197,7 @@ def _divide_word(
 
 @subroutine
 def less_than(a: Bytes, b: Bytes) -> bool:
-
+    BIGINT_BYTE_SIZE: UInt64 = UInt64(BIGINT_BYTE_SIZE_INT)
     length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
     a_digits: Bytes = pad(a, length)
     b_digits: Bytes = pad(b, length)
@@ -216,7 +222,7 @@ def less_than(a: Bytes, b: Bytes) -> bool:
 
 @subroutine
 def greater_than(a: Bytes, b: Bytes) -> bool:
-
+    BIGINT_BYTE_SIZE: UInt64 = UInt64(BIGINT_BYTE_SIZE_INT)
     length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
     a_digits: Bytes = pad(a, length)
     b_digits: Bytes = pad(b, length)
@@ -245,6 +251,8 @@ def divide(u_num: Bytes, v_num: Bytes) -> Bytes:
     assert u_num.length >= 1, "u_num must have at least one byte"
     assert v_num.length >= 1, "v_num must have at least one byte"
     assert not equal(v_num, itob(0)), "Non-zero divisor"
+
+    BASE_UINT256: BigUInt = BigUInt(BASE_UINT256_INT)
 
     if less_than(u_num, v_num):
         # The divisor is larger than the dividend
@@ -298,42 +306,41 @@ def divide(u_num: Bytes, v_num: Bytes) -> Bytes:
         for i in reversed(urange(1, n + 1)):
             u_ji: BigUInt = BigUInt.from_bytes(u[j + i].bytes)
             v_i: BigUInt = BigUInt.from_bytes(v[i].bytes)
+            p: BigUInt = BigUInt(0)
+            p_mod_base: BigUInt = BigUInt(0)
+            floor_div_adjuster: UInt64 = UInt64(0)
             if c_is_neg:
                 # Handle case when c is negative
                 if u_ji >= qhat * v_i + c:
                     # p is positive
-                    p: BigUInt = u_ji - (qhat * v_i + c)
-                    p_mod_base: BigUInt = p % BASE_UINT256
+                    p = u_ji - (qhat * v_i + c)
+                    p_mod_base = p % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
                     c = p // BASE_UINT256
                     c_is_neg = False
                 else:
                     # p is negative
-                    p: BigUInt = (qhat * v_i + c) - u_ji
-                    p_mod_base: BigUInt = (
-                        BASE_UINT256 - (p % BASE_UINT256)
-                    ) % BASE_UINT256
+                    p = (qhat * v_i + c) - u_ji
+                    p_mod_base = (BASE_UINT256 - (p % BASE_UINT256)) % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
-                    floor_div_adjuster: UInt64 = 1 if p_mod_base != 0 else 0
+                    floor_div_adjuster = UInt64(1) if p_mod_base != 0 else UInt64(0)
                     c = (p // BASE_UINT256) + floor_div_adjuster
                     c_is_neg = True
             else:
                 # Handle case when c is positive
                 if u_ji + c >= qhat * v_i:
                     # p is positive
-                    p: BigUInt = (u_ji + c) - qhat * v_i
-                    p_mod_base: BigUInt = p % BASE_UINT256
+                    p = (u_ji + c) - qhat * v_i
+                    p_mod_base = p % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
                     c = p // BASE_UINT256
                     c_is_neg = False
                 else:
                     # p is negative
-                    p: BigUInt = (qhat * v_i) - (u_ji + c)
-                    p_mod_base: BigUInt = (
-                        BASE_UINT256 - (p % BASE_UINT256)
-                    ) % BASE_UINT256
+                    p = (qhat * v_i) - (u_ji + c)
+                    p_mod_base = (BASE_UINT256 - (p % BASE_UINT256)) % BASE_UINT256
                     u[j + i] = biguint_to_digit(p_mod_base)
-                    floor_div_adjuster: UInt64 = 1 if p_mod_base != 0 else 0
+                    floor_div_adjuster = UInt64(1) if p_mod_base != 0 else UInt64(0)
                     c = (p // BASE_UINT256) + floor_div_adjuster
                     c_is_neg = True
 

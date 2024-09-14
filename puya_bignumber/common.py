@@ -19,7 +19,7 @@ def pad(value: Bytes, width: UInt64) -> Bytes:
 
 
 @subroutine
-def enclosing_multiple(num: UInt64, multiple: UInt64):
+def enclosing_multiple(num: UInt64, multiple: UInt64) -> UInt64:
     missing_length: UInt64 = multiple - num % multiple
     missing_length_mod: UInt64 = missing_length % multiple
     width: UInt64 = num + missing_length_mod
