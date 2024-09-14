@@ -12,6 +12,7 @@ packages = [{include = "puya_bignumber"}, {include = "puya_bignumber/py.typed"}]
 python = "^3.12"
 py-algorand-sdk = "^2.6.1"
 algorand-python = "^2.0.1"
+puyapy = "^3.1.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.2"

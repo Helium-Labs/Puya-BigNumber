@@ -11,6 +11,7 @@ from puya_bignumber import (
     barrett_reducer_factor,
     modexp_barrett_reduce,
 )
+from .build import build
 import os
 import random
 import base64
@@ -152,6 +153,9 @@ def assert_divide(a_bytes: bytes, b_bytes: bytes):
 
 
 def test_all():
+    # Test that it compiles
+    build("./tests", "tester_contract")
+    # Test that operators are accurate
     EXTREME_DIVIDEND = int(2**3600).to_bytes(451)
     EXTREME_DIVISOR_B64 = "/6fyvwqQ+ln4tmR0bFiDFnVMEHQkJcpMWOm+eR/EfQwp9b2glCuQ8wYLjcK0CfNTq2rWGv69XugNhXIrMKX8W9Fh4rh1RrrNRsrg1oj2+ppDiyRe+TL3UexbwCYlT3Is0i6iz4+ZTQVdru8pjHqtxKrtmnREB4kRszANhVJ8N4uBXxCMA/z5zLRo+/B8EZUuBSdTJUlz62E6edyNykGIqPPEzzxJZKZL0yOG3TJu5Pch0Y9nzwXJs8PcUGCG22wcCwakXXUT7D3cQ3WpztcRBXBtxfivmmqvT8ixSnLuws0h"
     assert_divide(EXTREME_DIVIDEND, base64.b64decode(EXTREME_DIVISOR_B64))
