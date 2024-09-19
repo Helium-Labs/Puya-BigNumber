@@ -20,6 +20,8 @@ __all__ = [
     "barrett_reducer_factor",
     "mod_barrett_reduce",
     "modexp_barrett_reduce",
+    "modexp_barrett_reduce_assumption_validation",
+    "modexp_barrett_reduce_post_validation",
 ]
 
 BIGINT_BYTE_SIZE_INT: int = 64
