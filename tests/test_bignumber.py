@@ -1,4 +1,4 @@
-from algopy import Bytes
+from algopy import Bytes, UInt64
 from puya_bignumber import (
     add,
     subtract,
@@ -11,10 +11,18 @@ from puya_bignumber import (
     barrett_reducer_factor,
     modexp_barrett_reduce,
 )
+from puya_bignumber.common import pad
 from .build import build
 import os
 import random
 import base64
+
+
+def assert_pad_works(a_bytes: bytes):
+    test: Bytes = pad(Bytes(a_bytes), UInt64(len(a_bytes) + 1))
+    assert test == Bytes(b"\x00" + a_bytes)
+    test: Bytes = pad(Bytes(a_bytes), UInt64(len(a_bytes)))
+    assert test == Bytes(a_bytes)
 
 
 def get_barrett_precomputed_factor(mod: bytes) -> bytes:
@@ -175,6 +183,7 @@ def test_all():
         MAX_WIDTH = 1024
         a_bytes = os.urandom(random.randint(2, MAX_WIDTH))
         b_bytes = os.urandom(random.randint(2, MAX_WIDTH))
+        assert_pad_works(a_bytes)
         assert_equal(a_bytes, b_bytes)
         assert_less_than(a_bytes, b_bytes)
         assert_greater_than(a_bytes, b_bytes)
@@ -182,6 +191,7 @@ def test_all():
         assert_mul(a_bytes, b_bytes)
         assert_add(a_bytes, b_bytes)
         assert_subtract(a_bytes, b_bytes)
+        assert_subtract(a_bytes, a_bytes)
 
     for _ in range(NUM_TESTS):
         # Generate a random modulus that is not a power of 2

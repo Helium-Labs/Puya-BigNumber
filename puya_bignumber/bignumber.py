@@ -35,9 +35,6 @@ def add(a: Bytes, b: Bytes) -> Bytes:
     a_digits: Bytes = pad(a, length)
     b_digits: Bytes = pad(b, length)
 
-    assert a_digits.length % BIGINT_BYTE_SIZE == 0, "a length must be multiple of width"
-    assert b_digits.length % BIGINT_BYTE_SIZE == 0, "b length must be multiple of width"
-
     n: UInt64 = a_digits.length // BIGINT_BYTE_SIZE
     result: Bytes = Bytes(b"")
     carry: UInt64 = UInt64(0)
@@ -80,8 +77,6 @@ def subtract(a: Bytes, b: Bytes) -> Bytes:
     length: UInt64 = enclosing_multiple(max_value(a.length, b.length), BIGINT_BYTE_SIZE)
     a_digits: Bytes = pad(a, length)
     b_digits: Bytes = pad(b, length)
-    if a_digits == b_digits:
-        return bzero(a_digits.length)
     ones_complement: Bytes = ~b_digits
     twos_complement: Bytes = add(ones_complement, itob(1))
     a_inv_b: Bytes = add(a_digits, twos_complement)
@@ -356,13 +351,8 @@ def divide(u_num: Bytes, v_num: Bytes) -> Bytes:
 
 
 @subroutine
-def _barrett_reducer_shift(mod: Bytes) -> UInt64:
-    return mod.length * 2
-
-
-@subroutine
 def _calc_mod_barrett_reduce(a: Bytes, mod: Bytes, precomputed_factor: Bytes) -> Bytes:
-    shift: UInt64 = _barrett_reducer_shift(mod)
+    shift: UInt64 = mod.length * 2
     a_factor: Bytes = multiply(a, precomputed_factor)
     q: Bytes = extract(a_factor, 0, a_factor.length - shift)
     r: Bytes = subtract(a, multiply(q, mod))
@@ -378,7 +368,7 @@ def barrett_reducer_factor(mod: Bytes) -> Bytes:
         mod & subtract(mod, itob(1)), itob(0)
     ), "mod cannot be a power of 2"
 
-    shift: UInt64 = _barrett_reducer_shift(mod)
+    shift: UInt64 = mod.length * 2
     one_byte: Bytes = extract(itob(1), 7, 1)
     two_k: Bytes = concat(one_byte, bzero(shift))
     return divide(two_k, mod)

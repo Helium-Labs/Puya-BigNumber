@@ -10,8 +10,6 @@ def decode_dynamic_bytes(value: Bytes) -> Bytes:
 @subroutine
 def pad(value: Bytes, width: UInt64) -> Bytes:
     assert value.length <= width, "Width must be wider than value"
-    if value.length == width:
-        return value
     pad_length: UInt64 = width - value.length
     padding: Bytes = bzero(pad_length)
     padded: Bytes = concat(padding, value)

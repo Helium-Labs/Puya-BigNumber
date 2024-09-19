@@ -31,7 +31,7 @@ def process_algokit(dir_path: str, filename: str) -> None:
         "-g",
         "2",
         "-O",
-        "0",
+        "2",
         "--out-dir",
         output_dir,
     ]
