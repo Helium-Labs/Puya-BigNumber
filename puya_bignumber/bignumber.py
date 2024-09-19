@@ -393,6 +393,12 @@ def mod_barrett_reduce(a: Bytes, mod: Bytes, precomputed_factor: Bytes) -> Bytes
 def modexp_barrett_reduce(
     base: Bytes, exp: Bytes, mod: Bytes, precomputed_factor: Bytes
 ) -> Bytes:
+    modexp_barrett_reduce_assumption_validation(base, mod)
+    return modexp_barrett_reduce_post_validation(base, exp, mod, precomputed_factor)
+
+
+@subroutine
+def modexp_barrett_reduce_assumption_validation(base: Bytes, mod: Bytes) -> None:
     # Validate Barrett Reduction assumptions. Validating here validates all successive mod assumptions.
     mod_squared: Bytes = multiply(mod, mod)
     assert less_than(base, mod_squared), "Must have 0 <= a < mod ** 2"
@@ -401,6 +407,12 @@ def modexp_barrett_reduce(
         mod & subtract(mod, itob(1)), itob(0)
     ), "mod cannot be a power of 2"
 
+
+# Modular Exponentiation by Squaring
+@subroutine
+def modexp_barrett_reduce_post_validation(
+    base: Bytes, exp: Bytes, mod: Bytes, precomputed_factor: Bytes
+) -> Bytes:
     result: Bytes = itob(1)
     base = _calc_mod_barrett_reduce(base, mod, precomputed_factor)
     for bit_i in reversed(urange(exp.length * 8)):

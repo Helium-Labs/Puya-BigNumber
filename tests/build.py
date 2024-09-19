@@ -29,7 +29,7 @@ def process_algokit(dir_path: str, filename: str) -> None:
         "py",
         contract_path,
         "-g",
-        "2",
+        "0",
         "-O",
         "2",
         "--out-dir",
